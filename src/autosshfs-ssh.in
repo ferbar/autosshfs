@@ -27,6 +27,7 @@ PROGNAME=${0##*/}
 
 fail() {
   echo "${PROGNAME}: $@"
+  logger "${PROGNAME} failed: $@"
   exit 1
 }
 
@@ -44,7 +45,7 @@ export DISPLAY
 
 # Find a GUI in case we need an SSH password
 ssh_askpass() {
-  local dirs="/usr/bin /usr/local/bin /usr/libexec/openssh /usr/lib/openssh"
+  local dirs="/usr/lib/ssh /usr/bin /usr/local/bin /usr/libexec/openssh /usr/lib/openssh"
   local progs="ssh-askpass gtk-led-askpass gnome-ssh-askpass x11-ssh-askpass"
   local askpass=
 
@@ -63,7 +64,7 @@ ssh_askpass() {
     done
   done
 
-  fail "cannot find SSH_ASKPASS"
+  fail "cannot find SSH_ASKPASS path: $dirs"
 }
 
 SSH_ASKPASS=$(ssh_askpass)
@@ -74,4 +75,4 @@ eval $(keychain -q --eval)
 
 # Run the SSH command
 # autosshfs-as-USER passes the HOST to ssh to as $1
-exec ssh -a -x -2 -oClearAllForwardings=yes "${1}" -s sftp
+exec setsid ssh -a -x -2 -oClearAllForwardings=yes "${1}" -s sftp

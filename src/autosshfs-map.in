@@ -62,7 +62,7 @@ member() {
   fi
   return $ex
 }
-member $USER $GROUP || fail "user must be a member of group ssh"
+member $USER $GROUP || fail "user '$USER' must be a member of group '$GROUP'"
 
 SSH_WRAPPER="${PREFIX}/bin/autosshfs-as-${USER}"
 
