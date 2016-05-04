@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# wenns hunzt: sshfs -d -o ssh_command=/usr/local/bin/autosshfs-ssh hpmicrolinux: hpmicrolinux
+
 # autosshfs-ssh -- Wrap ssh to load SSH environment from user's keychain
 #
 # It is intended to be called as: sudo -H -u USER -i autosshfs-ssh HOST
@@ -27,9 +29,20 @@ PROGNAME=${0##*/}
 
 fail() {
   echo "${PROGNAME}: $@"
-  logger "${PROGNAME} failed: $@"
+  logger -s -i -t autosshfs "${PROGNAME} error: $*"
   exit 1
 }
+
+log() {
+	logger -s -i -t autosshfs "[$*]"
+}
+
+log "parameters: [$*]"
+if [ -z "$1" ] ; then
+	fail "no host given"
+fi
+
+REMOTE=$1
 
 # We need a user
 test -n "$USER"       || fail "missing username"
@@ -68,11 +81,21 @@ ssh_askpass() {
 }
 
 SSH_ASKPASS=$(ssh_askpass)
+if [ $? != 0 ] ; then
+	fail "didn't find SSH_ASKPASS"
+fi
 export SSH_ASKPASS
+log "/usr/local/bin/autosshfs-ssh: SSH_ASKPASS: $SSH_ASKPASS, DISPLAY: $DISPLAY path:$(pwd) remote:$REMOTE"
 
 # Load the keychain environment
 eval $(keychain -q --eval)
 
+# 20160504: das war das problem:
+#log "trying ssh askpass"
+#log "ssh-askpass-test: $($SSH_ASKPASS 2>&1)"
+#log "done"
+
 # Run the SSH command
 # autosshfs-as-USER passes the HOST to ssh to as $1
+log "exec setsid ssh -a -x -2 -oClearAllForwardings=yes "$REMOTE" -s sftp"
 exec setsid ssh -a -x -2 -oClearAllForwardings=yes "${1}" -s sftp
